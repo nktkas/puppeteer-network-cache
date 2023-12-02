@@ -17,10 +17,10 @@ import PuppeteerNetworkCache from 'puppeteer-extra-plugin-network-cache';
 puppeteer.use(new PuppeteerNetworkCache());
 
 puppeteer.launch().then(async browser => {
-  const page = await browser.newPage();
-  page.goto('https://example.com');
+    const page = await browser.newPage();
+    page.goto('https://example.com');
 
-  let request = await page.networkCache.waitRequest(/https:\/\/example.com/);
-  let response = await page.networkCache.waitResponse(/https:\/\/example.com/);
-})
+    let request = await page.networkCache.waitRequest(/https:\/\/example.com/);
+    let response = await page.networkCache.waitResponse(/https:\/\/example.com/);
+});
 ```
