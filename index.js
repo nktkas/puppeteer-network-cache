@@ -145,7 +145,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
              */
             waitRequest: async (urlRegex, timeout = 20000, globalCache = false) => {
                 return await new Promise((r, j) => {
-                    let request = this.existRequest(urlRegex);
+                    let request = page.networkCache.existRequest(urlRegex);
                     if (request) return r(request);
 
                     const networkCache = globalCache ? page.browser().networkCache : page.networkCache;
