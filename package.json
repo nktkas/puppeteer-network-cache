@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/nktkas/puppeteer-extra-plugin-network-cache.git"
   },
-  "author": "nktk",
+  "author": "nktkas",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache/issues"
