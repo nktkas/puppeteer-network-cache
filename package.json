@@ -18,5 +18,6 @@
   "homepage": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache#readme",
   "dependencies": {
     "puppeteer-extra-plugin": "^3.2.3"
-  }
+  },
+  "type": "module"
 }

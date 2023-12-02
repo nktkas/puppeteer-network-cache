@@ -182,7 +182,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             }
             let date = Date.now();
 
-            let response = { url, status, headers, buffer, body, date };
+            response = { url, status, headers, buffer, body, date };
 
             page.networkCache.response.unshift(response);
             page.networkCache.event.emit('response', response);
@@ -197,7 +197,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             let postData = request.postData();
             let date = Date.now();
 
-            let request = { url, method, headers, postData, date };
+            request = { url, method, headers, postData, date };
 
             page.networkCache.request.unshift(request);
             page.networkCache.event.emit('request', request);
