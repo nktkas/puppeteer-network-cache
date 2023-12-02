@@ -1,4 +1,5 @@
 import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
+import EventEmitter from 'eventemitter3';
 
 /**
  * @typedef {Object} HTTPResponse - Represents an HTTP response received by a page
