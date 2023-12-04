@@ -64,17 +64,21 @@ import EventEmitter from 'eventemitter3';
  */
 
 /**
- * Saves all HTTP requests/responses from browser/pages to memory
+ * Saves HTTP requests/responses from browser/pages in cache
  */
 export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
     /**
-     * @param {Number} [browserCacheLimit=500] - How many HTTP records of the browser to keep in memory
-     * @param {Number} [pageCacheLimit=100] - How many HTTP records of the page to keep in memory
+     * @param {Number} [browserCacheLimit=200] - How many HTTP records of the browser to keep in the cache.
+     * @param {Number} [pageCacheLimit=100] - How many HTTP records of the page to keep in the cache.
+     * @param {Function} [requestValidatorFn] - A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests.
+     * @param {Function} [responseValidatorFn] - A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses.
      */
-    constructor(browserCacheLimit, pageCacheLimit) {
+    constructor(browserCacheLimit, pageCacheLimit, requestValidatorFn, responseValidatorFn) {
         super();
-        this.browserCacheLimit = browserCacheLimit ?? 500;
+        this.browserCacheLimit = browserCacheLimit ?? 200;
         this.pageCacheLimit = pageCacheLimit ?? 100;
+        this.requestValidatorFn = requestValidatorFn ?? (() => true);
+        this.responseValidatorFn = responseValidatorFn ?? (() => true);
     }
 
     get name() {
@@ -84,79 +88,83 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
     onBrowser(browser) {
         browser.networkCache = {
             /**
-             * Browser HTTPRequest array
+             * Browser HTTPRequest array.
              */
-            request: [],
+            requests: [],
 
             /**
-             * Browser HTTPResponse array
+             * Browser HTTPResponse array.
              */
-            response: [],
+            responses: [],
 
             /**
-             * Creates events: "request" (HTTPRequest) | "response" (HTTPResponse)
+             * EventEmitter for new HTTPRequest / HTTPResponse in cache: "request" | "response"
              */
-            event: new EventEmitter(),
+            eventEmitter: new EventEmitter(),
         }
 
-        browser.networkCache.event.on('request', (request) => {
-            browser.networkCache.request.unshift(request);
+        browser.networkCache.eventEmitter.on('request', (request) => {
+            browser.networkCache.requests.unshift(request);
 
-            browser.networkCache.request = browser.networkCache.request.slice(0, this.browserCacheLimit);
+            if (browser.networkCache.requests.length > this.browserCacheLimit) {
+                browser.networkCache.requests = browser.networkCache.requests.slice(0, this.browserCacheLimit);
+            }
         });
-        browser.networkCache.event.on('response', (response) => {
-            browser.networkCache.response.unshift(response);
+        browser.networkCache.eventEmitter.on('response', (response) => {
+            browser.networkCache.responses.unshift(response);
 
-            browser.networkCache.response = browser.networkCache.response.slice(0, this.browserCacheLimit);
+            if (browser.networkCache.responses.length > this.browserCacheLimit) {
+                browser.networkCache.responses = browser.networkCache.responses.slice(0, this.browserCacheLimit);
+            }
         });
     }
 
     onPageCreated(page) {
         page.networkCache = {
             /**
-             * Browser HTTPRequest array
+             * Page HTTPRequest array.
              */
-            request: [],
+            requests: [],
 
             /**
-             * Browser HTTPResponse array
+             * Page HTTPResponse array.
              */
-            response: [],
+            responses: [],
 
             /**
-             * Creates events: "request" (HTTPRequest) | "response" (HTTPResponse)
+             * EventEmitter for new HTTPRequest / HTTPResponse in cache: "request" | "response"
              */
-            event: new EventEmitter(),
+            eventEmitter: new EventEmitter(),
 
             /**
-             * Check the existence of a request and return it (if exists), using RegExp for validation
-             * @param {RegExp} urlRegex - RegExp template to search request by URL
-             * @param {Boolean} [globalCache=false] - Search request in the whole browser or only on the page
+             * Check the existence of a request and return it (if exists), using RegExp for validation.
+             * @param {RegExp} urlRegex - RegExp template to search request by URL.
+             * @param {Boolean} [globalCache=false] - Search request in the whole browser or only on the page.
              * @returns {HTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
              */
             existRequest: (urlRegex, globalCache = false) => {
                 const networkCache = globalCache ? page.browser().networkCache : page.networkCache;
-                return networkCache.request.find((request) => urlRegex.test(request.url)) ?? null;
+                return networkCache.requests.find((request) => urlRegex.test(request.url)) ?? null;
             },
 
             /**
-             * Check the existence of a response and return it (if exists), using RegExp for validation
-             * @param {RegExp} urlRegex - RegExp template to search response by URL
-             * @param {Boolean} [globalCache=false] - Search response in the whole browser or only on the page
+             * Check the existence of a response and return it (if exists), using RegExp for validation.
+             * @param {RegExp} urlRegex - RegExp template to search response by URL.
+             * @param {Boolean} [globalCache=false] - Search response in the whole browser or only on the page.
              * @returns {HTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
              */
             existResponse: (urlRegex, globalCache = false) => {
                 const networkCache = globalCache ? page.browser().networkCache : page.networkCache;
-                return networkCache.response.find((response) => urlRegex.test(response.url)) ?? null;
+                return networkCache.responses.find((response) => urlRegex.test(response.url)) ?? null;
             },
 
             /**
-             * Wait for the request to appear, then return it
-             * @param {RegExp} urlRegex - RegExp template to search request by URL
-             * @param {Number} [timeout=20000] - Waiting time for a request to be received
-             * @param {Boolean} [globalCache=false] - Search request in the whole browser or only on the page
-             * @returns {HTTPRequest} Represents an HTTP request sent by a page
-             * @throws Will throw an error, if the timeout expires
+             * Wait for the request to appear, then return it.
+             * @param {RegExp} urlRegex - RegExp template to search request by URL.
+             * @param {Number} [timeout=20000] - Waiting time for a request to be received.
+             * @param {Boolean} [globalCache=false] - Search request in the whole browser or only on the page.
+             * @returns {HTTPRequest} Represents an HTTP request sent by a page.
+             * @throws Will throw an error, if the timeout expires.
              */
             waitRequest: async (urlRegex, timeout = 20000, globalCache = false) => {
                 return await new Promise((r, j) => {
@@ -167,27 +175,27 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                     const listener = function listener(request) {
                         if (urlRegex.test(request.url)) {
                             clearTimeout(timeoutTimer);
-                            networkCache.event.removeListener('request', listener);
+                            networkCache.eventEmitter.removeListener('request', listener);
                             return r(request);
                         }
                     };
                     let timeoutTimer = setTimeout(() => {
-                        networkCache.event.removeListener('request', listener);
+                        networkCache.eventEmitter.removeListener('request', listener);
                         return j(new Error('Timeout wait request', { cause: { urlRegex, timeout, networkCache: page.networkCache } }));
                     }, timeout);
 
-                    networkCache.event.on('request', listener);
+                    networkCache.eventEmitter.on('request', listener);
 
                 });
             },
 
             /**
-             * Wait for the response to appear, then return it
-             * @param {RegExp} urlRegex - RegExp template to search response by URL
-             * @param {Number} [timeout=20000] - Waiting time for a response to be received
-             * @param {Boolean} [globalCache=false] - Search response in the whole browser or only on the page
-             * @returns {HTTPResponse} Represents an HTTP response received by a page
-             * @throws Will throw an error, if the timeout expires
+             * Wait for the response to appear, then return it.
+             * @param {RegExp} urlRegex - RegExp template to search response by URL.
+             * @param {Number} [timeout=20000] - Waiting time for a response to be received.
+             * @param {Boolean} [globalCache=false] - Search response in the whole browser or only on the page.
+             * @returns {HTTPResponse} Represents an HTTP response received by a page.
+             * @throws Will throw an error, if the timeout expires.
              */
             waitResponse: async (urlRegex, timeout = 20000, globalCache = false) => {
                 return await new Promise((r, j) => {
@@ -198,38 +206,46 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                     const listener = function (response) {
                         if (urlRegex.test(response.url)) {
                             clearTimeout(timeoutTimer);
-                            networkCache.event.removeListener('response', listener);
+                            networkCache.eventEmitter.removeListener('response', listener);
                             return r(response);
                         }
                     };
                     let timeoutTimer = setTimeout(() => {
-                        networkCache.event.removeListener('response', listener);
+                        networkCache.eventEmitter.removeListener('response', listener);
                         return j(new Error('Timeout wait response', { cause: { urlRegex, timeout, networkCache: page.networkCache } }));
                     }, timeout);
-                    networkCache.event.on('response', listener);
+                    networkCache.eventEmitter.on('response', listener);
                 });
             },
         }
 
-        page.on('request', (pptrRequest) => {
+        page.on('request', async (pptrRequest) => {
             let request = formatPptrHTTPRequest(pptrRequest);
             request.date = Date.now();
 
-            page.networkCache.request.unshift(request);
-            page.networkCache.event.emit('request', request);
-            page.browser().networkCache.event.emit('request', request);
+            if (await this.requestValidatorFn(request)) {
+                page.networkCache.requests.unshift(request);
+                page.networkCache.eventEmitter.emit('request', request);
+                page.browser().networkCache.eventEmitter.emit('request', request);
 
-            page.networkCache.request = page.networkCache.request.slice(0, this.pageCacheLimit);
+                if (page.networkCache.requests.length > this.pageCacheLimit) {
+                    page.networkCache.requests = page.networkCache.requests.slice(0, this.pageCacheLimit);
+                }
+            }
         });
         page.on('response', async (pptrResponse) => {
             let response = await formatPptrHTTPResponse(pptrResponse);
             response.date = Date.now();
 
-            page.networkCache.response.unshift(response);
-            page.networkCache.event.emit('response', response);
-            page.browser().networkCache.event.emit('response', response);
+            if (await this.responseValidatorFn(response)) {
+                page.networkCache.responses.unshift(response);
+                page.networkCache.eventEmitter.emit('response', response);
+                page.browser().networkCache.eventEmitter.emit('response', response);
 
-            page.networkCache.response = page.networkCache.response.slice(0, this.pageCacheLimit);
+                if (page.networkCache.responses.length > this.pageCacheLimit) {
+                    page.networkCache.responses = page.networkCache.responses.slice(0, this.pageCacheLimit);
+                }
+            }
         });
     }
 }
@@ -245,7 +261,6 @@ function formatPptrHTTPRequest(request) {
     return { url, method, headers, postData, date, redirectChain, resourceType };
 }
 async function formatPptrHTTPResponse(response) {
-    let request = formatPptrHTTPRequest(response.request());
     let url = response.url();
     let remoteAddress = response.remoteAddress();
     let status = response.status();
@@ -254,7 +269,7 @@ async function formatPptrHTTPResponse(response) {
     let body;
     if (status !== 204 && (status <= 299 || status >= 400)) {
         buffer = await response.buffer();
-        if (request.resourceType == 'image') {
+        if (response.request().resourceType() == 'image') {
             body = await buffer.toString('base64');
         } else {
             body = await response.text();
@@ -270,6 +285,7 @@ async function formatPptrHTTPResponse(response) {
         validFrom: response.securityDetails().validFrom(),
         validTo: response.securityDetails().validTo(),
     }
+    let request = formatPptrHTTPRequest(response.request());
 
     return { url, remoteAddress, status, headers, buffer, body, fromCache, timing, securityDetails, request };
 }
