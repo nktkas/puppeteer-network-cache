@@ -211,8 +211,8 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             },
         }
 
-        page.on('request', (request) => {
-            let request = formatPptrHTTPRequest(request);
+        page.on('request', (pptrRequest) => {
+            let request = formatPptrHTTPRequest(pptrRequest);
             request.date = Date.now();
 
             page.networkCache.request.unshift(request);
@@ -221,8 +221,8 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
 
             page.networkCache.request = page.networkCache.request.slice(0, this.pageCacheLimit);
         });
-        page.on('response', async (response) => {
-            let response = await formatPptrHTTPResponse(response);
+        page.on('response', async (pptrResponse) => {
+            let response = await formatPptrHTTPResponse(pptrResponse);
             response.date = Date.now();
 
             page.networkCache.response.unshift(response);
