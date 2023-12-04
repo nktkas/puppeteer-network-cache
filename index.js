@@ -26,11 +26,13 @@ import EventEmitter from 'eventemitter3';
  */
 export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
     /**
-     * @param {Number} [cacheLimit=1000] - How many HTTP records to keep in memory
+     * @param {Number} [browserCacheLimit=500] - How many HTTP records of the browser to keep in memory
+     * @param {Number} [pageCacheLimit=100] - How many HTTP records of the page to keep in memory
      */
-    constructor(cacheLimit = 1000) {
+    constructor(browserCacheLimit, pageCacheLimit) {
         super();
-        this.cacheLimit = cacheLimit;
+        this.browserCacheLimit = browserCacheLimit ?? 500;
+        this.pageCacheLimit = pageCacheLimit ?? 100;
     }
 
     get name() {
@@ -58,12 +60,12 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
         browser.networkCache.event.on('response', (response) => {
             browser.networkCache.response.unshift(response);
 
-            browser.networkCache.response = browser.networkCache.response.slice(0, this.cacheLimit);
+            browser.networkCache.response = browser.networkCache.response.slice(0, this.browserCacheLimit);
         });
         browser.networkCache.event.on('request', (request) => {
             browser.networkCache.request.unshift(request);
 
-            browser.networkCache.request = browser.networkCache.request.slice(0, this.cacheLimit);
+            browser.networkCache.request = browser.networkCache.request.slice(0, this.browserCacheLimit);
         });
     }
 
@@ -189,7 +191,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             page.networkCache.event.emit('response', response);
             page.browser().networkCache.event.emit('response', response);
 
-            page.networkCache.response = page.networkCache.response.slice(0, this.cacheLimit);
+            page.networkCache.response = page.networkCache.response.slice(0, this.pageCacheLimit);
         });
         page.on('request', (request) => {
             let url = request.url();
@@ -204,7 +206,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             page.networkCache.event.emit('request', request);
             page.browser().networkCache.event.emit('request', request);
 
-            page.networkCache.request = page.networkCache.request.slice(0, this.cacheLimit);
+            page.networkCache.request = page.networkCache.request.slice(0, this.pageCacheLimit);
         });
     }
 }
