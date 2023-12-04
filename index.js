@@ -98,7 +98,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             responses: [],
 
             /**
-             * EventEmitter for new HTTPRequest / HTTPResponse in cache: "request" | "response"
+             * EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response"
              */
             eventEmitter: new EventEmitter(),
         }
@@ -132,7 +132,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
             responses: [],
 
             /**
-             * EventEmitter for new HTTPRequest / HTTPResponse in cache: "request" | "response"
+             * EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response"
              */
             eventEmitter: new EventEmitter(),
 
