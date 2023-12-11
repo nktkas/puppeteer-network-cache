@@ -1,6 +1,3 @@
-import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
-import EventEmitter from 'eventemitter3';
-
 /**
  * @typedef {Object} NetworkResourceTiming
  * @property {Number} requestTime - Timing's requestTime is a baseline in seconds, while the other numbers are ticks in milliseconds relatively to this requestTime.
@@ -62,6 +59,9 @@ import EventEmitter from 'eventemitter3';
  * @property {SecurityDetails} securityDetails - SecurityDetails if the response was received over the secure connection, or null otherwise.
  * @property {HTTPRequest} request - A matching HTTPRequest object.
  */
+
+import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
+import EventEmitter from 'eventemitter3';
 
 /**
  * Saves HTTP requests/responses from browser/pages in cache
