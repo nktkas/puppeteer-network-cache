@@ -37,7 +37,6 @@
  * @property {String} method - The HTTP request method used. GET | HEAD | POST | PUT | DELETE | CONNECT | OPTIONS | TRACE | PATCH
  * @property {Object<string, string>[]} headers - An object with HTTP headers associated with the request. All header names are lower-case.
  * @property {String|undefined} postData - The request's post body, if any.
- * @property {HTTPRequest[]} redirectChain - A redirectChain is a chain of requests initiated to fetch a resource.
  * @property {String} resourceType - Contains the request's resource type as it was perceived by the rendering engine. Allowed Values: document, stylesheet, image, media, font, script, textTrack, xhr, fetch, prefetch, eventSource, webSocket, manifest, signedExchange, ping, CSPViolationReport, preflight, other
  * @property {Number} date - Time to receive the request in milliseconds.
  */
@@ -255,10 +254,9 @@ function formatPptrHTTPRequest(request) {
     let method = request.method();
     let headers = request.headers();
     let postData = request.postData();
-    let redirectChain = request.redirectChain().map(req => formatPptrHTTPRequest(req));
     let resourceType = request.resourceType();
 
-    return { url, method, headers, postData, redirectChain, resourceType };
+    return { url, method, headers, postData, resourceType };
 }
 async function formatPptrHTTPResponse(response) {
     let url = response.url();
