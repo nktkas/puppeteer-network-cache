@@ -259,6 +259,7 @@ function formatPptrHTTPRequest(request) {
     return { url, method, headers, postData, resourceType };
 }
 async function formatPptrHTTPResponse(response) {
+    let request = formatPptrHTTPRequest(response.request());
     let url = response.url();
     let remoteAddress = response.remoteAddress();
     let status = response.status();
@@ -267,23 +268,26 @@ async function formatPptrHTTPResponse(response) {
     let body;
     if (status !== 204 && (status <= 299 || status >= 400)) {
         buffer = await response.buffer();
-        if (response.request().resourceType() == 'image') {
+        if (request.resourceType() == 'image') {
             body = await buffer.toString('base64');
         } else {
             body = await response.text();
         }
     }
     let fromCache = response.fromCache();
-    let timing = response.timing();
-    let securityDetails = {
-        issuer: response.securityDetails().issuer(),
-        protocol: response.securityDetails().protocol(),
-        subjectAlternativeNames: response.securityDetails().subjectAlternativeNames(),
-        subjectName: response.securityDetails().subjectName(),
-        validFrom: response.securityDetails().validFrom(),
-        validTo: response.securityDetails().validTo(),
+    let timing = null;
+    let securityDetails = null;
+    if (fromCache) {
+        timing = response.timing();
+        securityDetails = {
+            issuer: response.securityDetails().issuer(),
+            protocol: response.securityDetails().protocol(),
+            subjectAlternativeNames: response.securityDetails().subjectAlternativeNames(),
+            subjectName: response.securityDetails().subjectName(),
+            validFrom: response.securityDetails().validFrom(),
+            validTo: response.securityDetails().validTo(),
+        };
     }
-    let request = formatPptrHTTPRequest(response.request());
 
-    return { url, remoteAddress, status, headers, buffer, body, fromCache, timing, securityDetails, request };
+    return { request, url, remoteAddress, status, headers, buffer, body, fromCache, timing, securityDetails };
 }
