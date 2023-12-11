@@ -258,7 +258,7 @@ function formatPptrHTTPRequest(request) {
     let redirectChain = request.redirectChain().map(req => formatPptrHTTPRequest(req));
     let resourceType = request.resourceType();
 
-    return { url, method, headers, postData, date, redirectChain, resourceType };
+    return { url, method, headers, postData, redirectChain, resourceType };
 }
 async function formatPptrHTTPResponse(response) {
     let url = response.url();
