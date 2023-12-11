@@ -227,9 +227,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                 page.networkCache.eventEmitter.emit('request', request);
                 page.browser().networkCache.eventEmitter.emit('request', request);
 
-                if (page.networkCache.requests.length > this.pageCacheLimit) {
-                    page.networkCache.requests = page.networkCache.requests.slice(0, this.pageCacheLimit);
-                }
+                page.networkCache.requests = page.networkCache.requests.slice(0, this.pageCacheLimit.length);
             }
         });
         page.on('response', async (pptrResponse) => {
@@ -241,9 +239,7 @@ export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                 page.networkCache.eventEmitter.emit('response', response);
                 page.browser().networkCache.eventEmitter.emit('response', response);
 
-                if (page.networkCache.responses.length > this.pageCacheLimit) {
-                    page.networkCache.responses = page.networkCache.responses.slice(0, this.pageCacheLimit);
-                }
+                page.networkCache.responses = page.networkCache.responses.slice(0, this.pageCacheLimit.length);
             }
         });
     }
@@ -268,25 +264,24 @@ async function formatPptrHTTPResponse(response) {
     let body;
     if (status !== 204 && (status <= 299 || status >= 400)) {
         buffer = await response.buffer();
-        if (request.resourceType() == 'image') {
+        if (request.resourceType == 'image') {
             body = await buffer.toString('base64');
         } else {
             body = await response.text();
         }
     }
     let fromCache = response.fromCache();
-    let timing = null;
-    let securityDetails = null;
-    if (fromCache) {
-        timing = response.timing();
+    let timing = response.timing();
+    let securityDetails = response.securityDetails();
+    if (securityDetails !== null) {
         securityDetails = {
-            issuer: response.securityDetails().issuer(),
-            protocol: response.securityDetails().protocol(),
-            subjectAlternativeNames: response.securityDetails().subjectAlternativeNames(),
-            subjectName: response.securityDetails().subjectName(),
-            validFrom: response.securityDetails().validFrom(),
-            validTo: response.securityDetails().validTo(),
-        };
+            issuer: securityDetails.issuer(),
+            protocol: securityDetails.protocol(),
+            subjectAlternativeNames: securityDetails.subjectAlternativeNames(),
+            subjectName: securityDetails.subjectName(),
+            validFrom: securityDetails.validFrom(),
+            validTo: securityDetails.validTo(),
+        }
     }
 
     return { request, url, remoteAddress, status, headers, buffer, body, fromCache, timing, securityDetails };
