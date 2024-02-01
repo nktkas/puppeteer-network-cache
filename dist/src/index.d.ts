@@ -1,17 +1,17 @@
 import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
-type ExtendedPuppeteerHTTPRequest = HTTPRequest & {
+export type ExtendedPuppeteerHTTPRequest = HTTPRequest & {
     date: number;
 };
-type ExtendedPuppeteerHTTPResponse = HTTPResponse & {
+export type ExtendedPuppeteerHTTPResponse = HTTPResponse & {
     date: number;
 };
-interface NetworkCacheEvents {
+export interface NetworkCacheEvents {
     'request': (request: ExtendedPuppeteerHTTPRequest) => void;
     'response': (response: ExtendedPuppeteerHTTPResponse) => void;
 }
-type ExtendedPuppeteerPage = {
+export type ExtendedPuppeteerPage = {
     networkCache: NetworkCache;
 };
 declare module 'puppeteer' {
