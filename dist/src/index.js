@@ -1,52 +1,32 @@
-import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
-import { TypedEmitter } from 'tiny-typed-emitter';
-import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
-
-type ExtendedPuppeteerHTTPRequest = HTTPRequest & { date: number };
-
-type ExtendedPuppeteerHTTPResponse = HTTPResponse & { date: number };
-
-interface NetworkCacheEvents {
-    'request': (request: ExtendedPuppeteerHTTPRequest) => void;
-    'response': (response: ExtendedPuppeteerHTTPResponse) => void;
-}
-
-type ExtendedPuppeteerPage = {
-    networkCache: NetworkCache;
-}
-
-declare module 'puppeteer' {
-    interface Page extends ExtendedPuppeteerPage { }
-}
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const puppeteer_extra_plugin_1 = require("puppeteer-extra-plugin");
+const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 class NetworkCache {
-    /** Page HTTPRequest array. */
-    requests: ExtendedPuppeteerHTTPRequest[] = [];
-    /** Page HTTPResponse array. */
-    responses: ExtendedPuppeteerHTTPResponse[] = [];
-    /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
-    eventEmitter: TypedEmitter<NetworkCacheEvents> = new TypedEmitter<NetworkCacheEvents>();
-
-    constructor() { }
-
+    constructor() {
+        /** Page HTTPRequest array. */
+        this.requests = [];
+        /** Page HTTPResponse array. */
+        this.responses = [];
+        /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
+        this.eventEmitter = new tiny_typed_emitter_1.TypedEmitter();
+    }
     /**
      * Check the existence of a request and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
      * @returns {ExtendedPuppeteerHTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
      */
-    existRequest(urlRegex: RegExp): ExtendedPuppeteerHTTPRequest | undefined {
+    existRequest(urlRegex) {
         return this.requests.find((request) => urlRegex.test(request.url()));
     }
-
     /**
      * Check the existence of a response and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
      * @returns {ExtendedPuppeteerHTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
      */
-    existResponse(urlRegex: RegExp): ExtendedPuppeteerHTTPResponse | undefined {
+    existResponse(urlRegex) {
         return this.responses.find((response) => urlRegex.test(response.url()));
     }
-
     /**
      * Wait for the request to appear, then return it.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
@@ -54,28 +34,25 @@ class NetworkCache {
      * @returns {ExtendedPuppeteerHTTPRequest} Represents an HTTP request sent by a page.
      * @throws Will throw an error, if the timeout expires.
      */
-    async waitRequest(urlRegex: RegExp, timeout: number = 20000): Promise<ExtendedPuppeteerHTTPRequest> {
+    async waitRequest(urlRegex, timeout = 20000) {
         return await new Promise((resolve, reject) => {
             const request = this.existRequest(urlRegex);
-            if (request) return resolve(request);
-
-            const listener = (request: ExtendedPuppeteerHTTPRequest): void => {
+            if (request)
+                return resolve(request);
+            const listener = (request) => {
                 if (urlRegex.test(request.url())) {
                     clearTimeout(timeoutTimer);
                     this.eventEmitter.removeListener('request', listener);
                     resolve(request);
                 }
-            }
-
+            };
             const timeoutTimer = setTimeout(() => {
                 this.eventEmitter.removeListener('request', listener);
                 reject(new Error('Timeout wait request'));
             }, timeout);
-
             this.eventEmitter.on('request', listener);
-        })
+        });
     }
-
     /**
      * Wait for the response to appear, then return it.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
@@ -83,89 +60,68 @@ class NetworkCache {
      * @returns {ExtendedPuppeteerHTTPResponse} Represents an HTTP response received by a page.
      * @throws Will throw an error, if the timeout expires.
      */
-    async waitResponse(urlRegex: RegExp, timeout: number = 20000): Promise<ExtendedPuppeteerHTTPResponse> {
+    async waitResponse(urlRegex, timeout = 20000) {
         return await new Promise((resolve, reject) => {
             const response = this.existResponse(urlRegex);
-            if (response) return resolve(response);
-
-            const listener = (response: ExtendedPuppeteerHTTPResponse) => {
+            if (response)
+                return resolve(response);
+            const listener = (response) => {
                 if (urlRegex.test(response.url())) {
                     clearTimeout(timeoutTimer);
                     this.eventEmitter.removeListener('response', listener);
                     resolve(response);
                 }
-            }
-
+            };
             const timeoutTimer = setTimeout(() => {
                 this.eventEmitter.removeListener('response', listener);
                 reject(new Error('Timeout wait response'));
             }, timeout);
-
             this.eventEmitter.on('response', listener);
         });
     }
 }
-
 /**
  * Saves HTTP requests/responses from browser/pages in cache
  */
-export default class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
-    /** How many HTTP records of the page to keep in the cache. */
-    pageCacheLimit: number;
-    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-    requestValidatorFn: (request: ExtendedPuppeteerHTTPRequest) => boolean | Promise<boolean>;
-    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-    responseValidatorFn: (response: ExtendedPuppeteerHTTPResponse) => boolean | Promise<boolean>;
-
+class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugin {
     constructor(
-        /** How many HTTP records of the page to keep in the cache. */
-        pageCacheLimit: number = 100,
-        /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-        requestValidatorFn: (request: ExtendedPuppeteerHTTPRequest) => boolean | Promise<boolean> = () => true,
-        /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-        responseValidatorFn: (response: ExtendedPuppeteerHTTPResponse) => boolean | Promise<boolean> = () => true
-    ) {
+    /** How many HTTP records of the page to keep in the cache. */
+    pageCacheLimit = 100, 
+    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
+    requestValidatorFn = () => true, 
+    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
+    responseValidatorFn = () => true) {
         super();
         this.pageCacheLimit = pageCacheLimit;
         this.requestValidatorFn = requestValidatorFn;
         this.responseValidatorFn = responseValidatorFn;
     }
-
-    override get name() {
+    get name() {
         return 'puppeteer-network-cache';
     }
-
-    override async onPageCreated(page: Page) {
+    async onPageCreated(page) {
         page.networkCache = new NetworkCache();
-        page.on('request', async (pptrRequest: HTTPRequest) => {
-            const request = {
-                ...pptrRequest,
-                date: Date.now()
-            } as ExtendedPuppeteerHTTPRequest;
-
+        page.on('request', async (pptrRequest) => {
+            const request = Object.assign(Object.assign({}, pptrRequest), { date: Date.now() });
             if (await this.requestValidatorFn(request)) {
                 page.networkCache.requests.push(request);
                 if (page.networkCache.requests.length > this.pageCacheLimit) {
                     page.networkCache.requests = page.networkCache.requests.slice(-this.pageCacheLimit);
                 }
-
                 page.networkCache.eventEmitter.emit('request', request);
             }
         });
-        page.on('response', async (pptrResponse: HTTPResponse) => {
-            const response = {
-                ...pptrResponse,
-                date: Date.now()
-            } as ExtendedPuppeteerHTTPResponse;
-
+        page.on('response', async (pptrResponse) => {
+            const response = Object.assign(Object.assign({}, pptrResponse), { date: Date.now() });
             if (await this.responseValidatorFn(response)) {
                 page.networkCache.responses.push(response);
                 if (page.networkCache.responses.length > this.pageCacheLimit) {
                     page.networkCache.responses = page.networkCache.responses.slice(-this.pageCacheLimit);
                 }
-
                 page.networkCache.eventEmitter.emit('response', response);
             }
         });
     }
 }
+exports.default = PuppeteerNetworkCache;
+//# sourceMappingURL=index.js.map

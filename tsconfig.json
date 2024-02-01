@@ -2,7 +2,7 @@
     "compilerOptions": {
         /* Visit https://aka.ms/tsconfig to read more about this file */
         /* Projects */
-        // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
+        "incremental": true, /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
         "composite": true, /* Enable constraints that allow a TypeScript project to be used with project references. */
         // "tsBuildInfoFile": "./.tsbuildinfo",              /* Specify the path to .tsbuildinfo incremental compilation file. */
         // "disableSourceOfProjectReferenceRedirect": true,  /* Disable preferring source files instead of declaration files when referencing composite projects. */
@@ -29,7 +29,7 @@
         // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
         /* Modules */
         "module": "CommonJS", /* Specify what module code is generated. */
-        // "rootDir": "./",                                  /* Specify the root folder within your source files. */
+        // "rootDir": "./", /* Specify the root folder within your source files. */
         "moduleResolution": "node", /* Specify how TypeScript looks up a file from a given module specifier. */
         // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
         // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
@@ -105,8 +105,7 @@
         "skipLibCheck": true /* Skip type checking all .d.ts files. */
     },
     "include": [
-        "./src/**/*.ts",
-        "./src/**/*.d.ts",
+        "./src/**/*",
     ],
     "exclude": [
         "node_modules",
