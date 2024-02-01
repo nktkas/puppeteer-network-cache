@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PuppeteerNetworkCache = void 0;
 const puppeteer_extra_plugin_1 = require("puppeteer-extra-plugin");
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 class NetworkCache {
@@ -14,7 +15,7 @@ class NetworkCache {
     /**
      * Check the existence of a request and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
-     * @returns {ExtendedPuppeteerHTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
+     * @returns {ExtendedHTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
      */
     existRequest(urlRegex) {
         return this.requests.find((request) => urlRegex.test(request.url()));
@@ -22,7 +23,7 @@ class NetworkCache {
     /**
      * Check the existence of a response and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
-     * @returns {ExtendedPuppeteerHTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
+     * @returns {ExtendedHTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
      */
     existResponse(urlRegex) {
         return this.responses.find((response) => urlRegex.test(response.url()));
@@ -31,7 +32,7 @@ class NetworkCache {
      * Wait for the request to appear, then return it.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
      * @param {number} [timeout=20000] - Waiting time for a request to be received.
-     * @returns {ExtendedPuppeteerHTTPRequest} Represents an HTTP request sent by a page.
+     * @returns {ExtendedHTTPRequest} Represents an HTTP request sent by a page.
      * @throws Will throw an error, if the timeout expires.
      */
     async waitRequest(urlRegex, timeout = 20000) {
@@ -57,7 +58,7 @@ class NetworkCache {
      * Wait for the response to appear, then return it.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
      * @param {Number} [timeout=20000] - Waiting time for a response to be received.
-     * @returns {ExtendedPuppeteerHTTPResponse} Represents an HTTP response received by a page.
+     * @returns {ExtendedHTTPResponse} Represents an HTTP response received by a page.
      * @throws Will throw an error, if the timeout expires.
      */
     async waitResponse(urlRegex, timeout = 20000) {
@@ -123,5 +124,5 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
         });
     }
 }
-exports.default = PuppeteerNetworkCache;
+exports.PuppeteerNetworkCache = PuppeteerNetworkCache;
 //# sourceMappingURL=index.js.map
