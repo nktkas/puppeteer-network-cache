@@ -1,24 +1,40 @@
 {
-  "name": "puppeteer-extra-plugin-network-cache",
-  "version": "1.0.0",
-  "description": "Saves all HTTP requests/responses from browser/pages to memory",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nktkas/puppeteer-extra-plugin-network-cache.git"
-  },
-  "author": "nktkas",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache/issues"
-  },
-  "homepage": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache#readme",
-  "dependencies": {
-    "eventemitter3": "^5.0.1",
-    "puppeteer-extra-plugin": "^3.2.3"
-  },
-  "type": "module"
+    "name": "puppeteer-extra-plugin-network-cache",
+    "version": "2.0.0",
+    "description": "Saves all HTTP requests/responses from browser/pages to memory",
+    "main": "dist/src/index.js",
+    "typings": "dist/src/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nktkas/puppeteer-extra-plugin-network-cache.git"
+    },
+    "homepage": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache#readme",
+    "bugs": {
+        "url": "https://github.com/nktkas/puppeteer-extra-plugin-network-cache/issues"
+    },
+    "author": "nktkas",
+    "license": "ISC",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build:tsc": "tsc --project tsconfig.json"
+    },
+    "engines": {
+        "node": ">=12.0.0"
+    },
+    "keywords": [
+        "puppeteer",
+        "puppeteer-extra",
+        "puppeteer-extra-plugin",
+        "network"
+    ],
+    "dependencies": {
+        "puppeteer-extra-plugin": "^3.2.3",
+        "tiny-typed-emitter": "^2.1.0"
+    },
+    "devDependencies": {
+        "@types/puppeteer": "^7.0.4"
+    }
 }
