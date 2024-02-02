@@ -4,7 +4,10 @@ import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
 
 export type ExtendedHTTPRequest = HTTPRequest & { date: number };
 
-export type ExtendedHTTPResponse = HTTPResponse & { date: number };
+export type ExtendedHTTPResponse = HTTPResponse & {
+    body: () => Promise<string>,
+    date: number
+};
 
 export interface NetworkCacheEvents {
     'request': (request: ExtendedHTTPRequest) => void;
@@ -157,6 +160,14 @@ export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
         page.on('response', async (pptrResponse: HTTPResponse) => {
             const response = {
                 ...pptrResponse,
+                body: async () => {
+                    if (pptrResponse.request().resourceType() == 'image') {
+                        const buffer = await pptrResponse.buffer();
+                        return buffer.toString('base64');
+                    } else {
+                        return await response.text();
+                    }
+                },
                 date: Date.now()
             } as ExtendedHTTPResponse;
 
