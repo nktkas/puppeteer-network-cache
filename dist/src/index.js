@@ -113,7 +113,15 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
             }
         });
         page.on('response', async (pptrResponse) => {
-            const response = Object.assign(Object.assign({}, pptrResponse), { date: Date.now() });
+            const response = Object.assign(Object.assign({}, pptrResponse), { body: async () => {
+                    if (pptrResponse.request().resourceType() == 'image') {
+                        const buffer = await pptrResponse.buffer();
+                        return buffer.toString('base64');
+                    }
+                    else {
+                        return await response.text();
+                    }
+                }, date: Date.now() });
             if (await this.responseValidatorFn(response)) {
                 page.networkCache.responses.push(response);
                 if (page.networkCache.responses.length > this.pageCacheLimit) {

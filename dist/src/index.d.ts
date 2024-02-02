@@ -5,6 +5,7 @@ export type ExtendedHTTPRequest = HTTPRequest & {
     date: number;
 };
 export type ExtendedHTTPResponse = HTTPResponse & {
+    body: () => Promise<string>;
     date: number;
 };
 export interface NetworkCacheEvents {
