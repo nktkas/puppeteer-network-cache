@@ -1,9 +1,9 @@
 {
     "name": "puppeteer-extra-plugin-network-cache",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Saves all HTTP requests/responses from browser/pages to memory",
-    "main": "dist/src/index.js",
-    "typings": "dist/src/index.d.ts",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
     "files": [
         "dist"
     ],
@@ -19,7 +19,7 @@
     "license": "ISC",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build:tsc": "tsc --project tsconfig.json"
+        "build": "tsc --project tsconfig.json"
     },
     "engines": {
         "node": ">=12.0.0"

@@ -1,17 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PuppeteerNetworkCache = void 0;
-const puppeteer_extra_plugin_1 = require("puppeteer-extra-plugin");
-const tiny_typed_emitter_1 = require("tiny-typed-emitter");
-class NetworkCache {
-    constructor() {
-        /** Page HTTPRequest array. */
-        this.requests = [];
-        /** Page HTTPResponse array. */
-        this.responses = [];
-        /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
-        this.eventEmitter = new tiny_typed_emitter_1.TypedEmitter();
-    }
+import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
+import { TypedEmitter } from 'tiny-typed-emitter';
+export class NetworkCache {
+    /** Page HTTPRequest array. */
+    requests = [];
+    /** Page HTTPResponse array. */
+    responses = [];
+    /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
+    eventEmitter = new TypedEmitter();
+    constructor() { }
     /**
      * Check the existence of a request and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
@@ -84,7 +80,13 @@ class NetworkCache {
 /**
  * Saves HTTP requests/responses from browser/pages in cache
  */
-class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugin {
+export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
+    /** How many HTTP records of the page to keep in the cache. */
+    pageCacheLimit;
+    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
+    requestValidatorFn;
+    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
+    responseValidatorFn;
     constructor(
     /** How many HTTP records of the page to keep in the cache. */
     pageCacheLimit = 100, 
@@ -103,7 +105,10 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
     async onPageCreated(page) {
         page.networkCache = new NetworkCache();
         page.on('request', async (pptrRequest) => {
-            const request = Object.assign(Object.assign({}, pptrRequest), { date: Date.now() });
+            const request = {
+                ...pptrRequest,
+                date: Date.now()
+            };
             if (await this.requestValidatorFn(request)) {
                 page.networkCache.requests.push(request);
                 if (page.networkCache.requests.length > this.pageCacheLimit) {
@@ -113,7 +118,9 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
             }
         });
         page.on('response', async (pptrResponse) => {
-            const response = Object.assign(Object.assign({}, pptrResponse), { body: async () => {
+            const response = {
+                ...pptrResponse,
+                body: async () => {
                     if (pptrResponse.request().resourceType() == 'image') {
                         const buffer = await pptrResponse.buffer();
                         return buffer.toString('base64');
@@ -121,7 +128,9 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
                     else {
                         return await response.text();
                     }
-                }, date: Date.now() });
+                },
+                date: Date.now()
+            };
             if (await this.responseValidatorFn(response)) {
                 page.networkCache.responses.push(response);
                 if (page.networkCache.responses.length > this.pageCacheLimit) {
@@ -132,5 +141,4 @@ class PuppeteerNetworkCache extends puppeteer_extra_plugin_1.PuppeteerExtraPlugi
         });
     }
 }
-exports.PuppeteerNetworkCache = PuppeteerNetworkCache;
 //# sourceMappingURL=index.js.map

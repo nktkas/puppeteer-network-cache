@@ -8,19 +8,18 @@ export type ExtendedHTTPResponse = HTTPResponse & {
     body: () => Promise<string>;
     date: number;
 };
+export type ExtendedPageMethods = {
+    networkCache: NetworkCache;
+};
 export interface NetworkCacheEvents {
     'request': (request: ExtendedHTTPRequest) => void;
     'response': (response: ExtendedHTTPResponse) => void;
 }
-export type ExtendedPageMethods = {
-    networkCache: NetworkCache;
-};
-export type ExtendedPage = Page & ExtendedPageMethods;
 declare module 'puppeteer' {
     interface Page extends ExtendedPageMethods {
     }
 }
-declare class NetworkCache {
+export declare class NetworkCache {
     /** Page HTTPRequest array. */
     requests: ExtendedHTTPRequest[];
     /** Page HTTPResponse array. */
@@ -77,4 +76,4 @@ export declare class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
     get name(): string;
     onPageCreated(page: Page): Promise<void>;
 }
-export {};
+//# sourceMappingURL=index.d.ts.map

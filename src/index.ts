@@ -9,22 +9,20 @@ export type ExtendedHTTPResponse = HTTPResponse & {
     date: number
 };
 
+export type ExtendedPageMethods = {
+    networkCache: NetworkCache;
+}
+
 export interface NetworkCacheEvents {
     'request': (request: ExtendedHTTPRequest) => void;
     'response': (response: ExtendedHTTPResponse) => void;
 }
 
-export type ExtendedPageMethods = {
-    networkCache: NetworkCache;
-}
-
-export type ExtendedPage = Page & ExtendedPageMethods;
-
 declare module 'puppeteer' {
     interface Page extends ExtendedPageMethods { }
 }
 
-class NetworkCache {
+export class NetworkCache {
     /** Page HTTPRequest array. */
     requests: ExtendedHTTPRequest[] = [];
     /** Page HTTPResponse array. */
