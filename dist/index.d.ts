@@ -19,6 +19,10 @@ declare module 'puppeteer' {
     interface Page extends ExtendedPageMethods {
     }
 }
+declare module 'puppeteer-core' {
+    interface Page extends ExtendedPageMethods {
+    }
+}
 export declare class NetworkCache {
     /** Page HTTPRequest array. */
     requests: ExtendedHTTPRequest[];
