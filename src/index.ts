@@ -27,19 +27,52 @@ declare module 'puppeteer-core' {
 }
 
 export class NetworkCache {
+    /** How many HTTP records should be stored in the cache. */
+    cacheLimit: number = 100;
+
     /** Page HTTPRequest array. */
     requests: ExtendedHTTPRequest[] = [];
+
     /** Page HTTPResponse array. */
     responses: ExtendedHTTPResponse[] = [];
-    /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
+
+    /** A function that decides whether to save an HTTP request to the cache or not. Default: save all requests. */
+    requestValidatorFn: (request: ExtendedHTTPRequest) => boolean | Promise<boolean> = () => true;
+
+    /** A function that decides whether to save an HTTP response to the cache or not. Default: save all responses. */
+    responseValidatorFn: (response: ExtendedHTTPResponse) => boolean | Promise<boolean> = () => true;
+
+    /** EventEmitter for HTTPRequest / HTTPResponse. 
+     * 
+     *  Events:
+     *  1) request
+     *  2) response
+     */
     eventEmitter: TypedEmitter<NetworkCacheEvents> = new TypedEmitter<NetworkCacheEvents>();
 
-    constructor() { }
+    constructor() {
+        this.eventEmitter.on('request', async (request: ExtendedHTTPRequest) => {
+            if (await this.requestValidatorFn(request)) {
+                this.requests.push(request);
+                if (this.requests.length > this.cacheLimit) {
+                    this.requests = this.requests.slice(-this.cacheLimit);
+                }
+            }
+        });
+        this.eventEmitter.on('response', async (response: ExtendedHTTPResponse) => {
+            if (await this.responseValidatorFn(response)) {
+                this.responses.push(response);
+                if (this.responses.length > this.cacheLimit) {
+                    this.responses = this.responses.slice(-this.cacheLimit);
+                }
+            }
+        });
+    }
 
     /**
      * Check the existence of a request and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
-     * @returns {ExtendedHTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
+     * @returns {ExtendedHTTPRequest|undefined} Represents an HTTP request sent by a page | undefined (Not found)
      */
     existRequest(urlRegex: RegExp): ExtendedHTTPRequest | undefined {
         return this.requests.find((request) => urlRegex.test(request.url()));
@@ -48,7 +81,7 @@ export class NetworkCache {
     /**
      * Check the existence of a response and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
-     * @returns {ExtendedHTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
+     * @returns {ExtendedHTTPResponse|undefined} Represents an HTTP response received by a page | undefined (Not found)
      */
     existResponse(urlRegex: RegExp): ExtendedHTTPResponse | undefined {
         return this.responses.find((response) => urlRegex.test(response.url()));
@@ -117,49 +150,23 @@ export class NetworkCache {
  * Saves HTTP requests/responses from browser/pages in cache
  */
 export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
-    /** How many HTTP records of the page to keep in the cache. */
-    pageCacheLimit: number;
-    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-    requestValidatorFn: (request: ExtendedHTTPRequest) => boolean | Promise<boolean>;
-    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-    responseValidatorFn: (response: ExtendedHTTPResponse) => boolean | Promise<boolean>;
-
-    constructor(
-        /** How many HTTP records of the page to keep in the cache. */
-        pageCacheLimit: number = 100,
-        /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-        requestValidatorFn: (request: ExtendedHTTPRequest) => boolean | Promise<boolean> = () => true,
-        /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-        responseValidatorFn: (response: ExtendedHTTPResponse) => boolean | Promise<boolean> = () => true
-    ) {
-        super();
-        this.pageCacheLimit = pageCacheLimit;
-        this.requestValidatorFn = requestValidatorFn;
-        this.responseValidatorFn = responseValidatorFn;
-    }
-
     override get name() {
         return 'puppeteer-network-cache';
     }
 
     override async onPageCreated(page: Page) {
         page.networkCache = new NetworkCache();
-        page.on('request', async (pptrRequest: HTTPRequest) => {
+
+        page.on('request', (pptrRequest: HTTPRequest) => {
             const request = {
                 ...pptrRequest,
                 date: Date.now()
             } as ExtendedHTTPRequest;
 
-            if (await this.requestValidatorFn(request)) {
-                page.networkCache.requests.push(request);
-                if (page.networkCache.requests.length > this.pageCacheLimit) {
-                    page.networkCache.requests = page.networkCache.requests.slice(-this.pageCacheLimit);
-                }
-
-                page.networkCache.eventEmitter.emit('request', request);
-            }
+            page.networkCache.eventEmitter.emit('request', request);
         });
-        page.on('response', async (pptrResponse: HTTPResponse) => {
+
+        page.on('response', (pptrResponse: HTTPResponse) => {
             const response = {
                 ...pptrResponse,
                 body: async () => {
@@ -173,14 +180,7 @@ export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                 date: Date.now()
             } as ExtendedHTTPResponse;
 
-            if (await this.responseValidatorFn(response)) {
-                page.networkCache.responses.push(response);
-                if (page.networkCache.responses.length > this.pageCacheLimit) {
-                    page.networkCache.responses = page.networkCache.responses.slice(-this.pageCacheLimit);
-                }
-
-                page.networkCache.eventEmitter.emit('response', response);
-            }
+            page.networkCache.eventEmitter.emit('response', response);
         });
     }
 }

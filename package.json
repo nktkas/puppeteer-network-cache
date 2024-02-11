@@ -1,6 +1,6 @@
 {
     "name": "puppeteer-extra-plugin-network-cache",
-    "version": "2.1.1",
+    "version": "3.0.0",
     "description": "Saves all HTTP requests/responses from browser/pages to memory",
     "main": "dist/index.js",
     "typings": "dist/index.d.ts",

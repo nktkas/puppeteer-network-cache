@@ -1,17 +1,45 @@
 import { PuppeteerExtraPlugin } from 'puppeteer-extra-plugin';
 import { TypedEmitter } from 'tiny-typed-emitter';
 export class NetworkCache {
+    /** How many HTTP records should be stored in the cache. */
+    cacheLimit = 100;
     /** Page HTTPRequest array. */
     requests = [];
     /** Page HTTPResponse array. */
     responses = [];
-    /** EventEmitter for new HTTPRequest / HTTPResponse in cache. Events: "request" | "response" */
+    /** A function that decides whether to save an HTTP request to the cache or not. Default: save all requests. */
+    requestValidatorFn = () => true;
+    /** A function that decides whether to save an HTTP response to the cache or not. Default: save all responses. */
+    responseValidatorFn = () => true;
+    /** EventEmitter for HTTPRequest / HTTPResponse.
+     *
+     *  Events:
+     *  1) request
+     *  2) response
+     */
     eventEmitter = new TypedEmitter();
-    constructor() { }
+    constructor() {
+        this.eventEmitter.on('request', async (request) => {
+            if (await this.requestValidatorFn(request)) {
+                this.requests.push(request);
+                if (this.requests.length > this.cacheLimit) {
+                    this.requests = this.requests.slice(-this.cacheLimit);
+                }
+            }
+        });
+        this.eventEmitter.on('response', async (response) => {
+            if (await this.responseValidatorFn(response)) {
+                this.responses.push(response);
+                if (this.responses.length > this.cacheLimit) {
+                    this.responses = this.responses.slice(-this.cacheLimit);
+                }
+            }
+        });
+    }
     /**
      * Check the existence of a request and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search request by URL.
-     * @returns {ExtendedHTTPRequest|null} Represents an HTTP request sent by a page | null (Not found)
+     * @returns {ExtendedHTTPRequest|undefined} Represents an HTTP request sent by a page | undefined (Not found)
      */
     existRequest(urlRegex) {
         return this.requests.find((request) => urlRegex.test(request.url()));
@@ -19,7 +47,7 @@ export class NetworkCache {
     /**
      * Check the existence of a response and return it (if exists), using RegExp for validation.
      * @param {RegExp} urlRegex - RegExp template to search response by URL.
-     * @returns {ExtendedHTTPResponse|null} Represents an HTTP response received by a page | null (Not found)
+     * @returns {ExtendedHTTPResponse|undefined} Represents an HTTP response received by a page | undefined (Not found)
      */
     existResponse(urlRegex) {
         return this.responses.find((response) => urlRegex.test(response.url()));
@@ -81,43 +109,19 @@ export class NetworkCache {
  * Saves HTTP requests/responses from browser/pages in cache
  */
 export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
-    /** How many HTTP records of the page to keep in the cache. */
-    pageCacheLimit;
-    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-    requestValidatorFn;
-    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-    responseValidatorFn;
-    constructor(
-    /** How many HTTP records of the page to keep in the cache. */
-    pageCacheLimit = 100, 
-    /** A function that decides whether to save an HTTP request to the cache or not. Receives an HTTPRequest and should return a boolean value. Default: save all requests. */
-    requestValidatorFn = () => true, 
-    /** A function that decides whether to save an HTTP response to the cache or not. Receives an HTTPResponse and should return a boolean value. Default: save all responses. */
-    responseValidatorFn = () => true) {
-        super();
-        this.pageCacheLimit = pageCacheLimit;
-        this.requestValidatorFn = requestValidatorFn;
-        this.responseValidatorFn = responseValidatorFn;
-    }
     get name() {
         return 'puppeteer-network-cache';
     }
     async onPageCreated(page) {
         page.networkCache = new NetworkCache();
-        page.on('request', async (pptrRequest) => {
+        page.on('request', (pptrRequest) => {
             const request = {
                 ...pptrRequest,
                 date: Date.now()
             };
-            if (await this.requestValidatorFn(request)) {
-                page.networkCache.requests.push(request);
-                if (page.networkCache.requests.length > this.pageCacheLimit) {
-                    page.networkCache.requests = page.networkCache.requests.slice(-this.pageCacheLimit);
-                }
-                page.networkCache.eventEmitter.emit('request', request);
-            }
+            page.networkCache.eventEmitter.emit('request', request);
         });
-        page.on('response', async (pptrResponse) => {
+        page.on('response', (pptrResponse) => {
             const response = {
                 ...pptrResponse,
                 body: async () => {
@@ -131,13 +135,7 @@ export class PuppeteerNetworkCache extends PuppeteerExtraPlugin {
                 },
                 date: Date.now()
             };
-            if (await this.responseValidatorFn(response)) {
-                page.networkCache.responses.push(response);
-                if (page.networkCache.responses.length > this.pageCacheLimit) {
-                    page.networkCache.responses = page.networkCache.responses.slice(-this.pageCacheLimit);
-                }
-                page.networkCache.eventEmitter.emit('response', response);
-            }
+            page.networkCache.eventEmitter.emit('response', response);
         });
     }
 }
