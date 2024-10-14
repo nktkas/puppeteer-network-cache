@@ -1,0 +1,13 @@
+{
+    "name": "@nktkas/puppeteer-network-cache",
+    "version": "4.0.0",
+    "exports": "./index.ts",
+    "fmt": {
+        "indentWidth": 4,
+        "lineWidth": 130
+    },
+    "imports": {
+        "typescript-event-target": "jsr:@derzade/typescript-event-target@^1.1.1",
+        "puppeteer-core": "npm:puppeteer-core@latest"
+    }
+}
