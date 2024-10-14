@@ -5,7 +5,7 @@
 ## Usage
 
 ```js
-import puppeteer from 'puppetee';
+import puppeteer from 'puppeteer';
 import { NetworkCache } from 'puppeteer-network-cache';
 
 puppeteer.launch().then(async browser => {
