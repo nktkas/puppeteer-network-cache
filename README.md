@@ -1,26 +1,21 @@
-# puppeteer-extra-plugin-network-cache
+# puppeteer-network-cache
 
-> A plugin for [puppeteer-extra](https://github.com/berstend/puppeteer-extra) to save HTTP requests/responses to cache.
-
-## Install
-
-```bash
-npm install git+https://github.com/nktkas/puppeteer-extra-plugin-network-cache.git
-```
+> A class for puppeteer to save all HTTP requests/responses to a cache. There is a filtering function and a limit on the number of records.
 
 ## Usage
 
 ```js
-import puppeteer from 'puppeteer-extra';
-import PuppeteerNetworkCache from 'puppeteer-extra-plugin-network-cache';
-
-puppeteer.use(new PuppeteerNetworkCache());
+import puppeteer from 'puppetee';
+import { NetworkCache } from 'puppeteer-network-cache';
 
 puppeteer.launch().then(async browser => {
     const page = await browser.newPage();
+
+    const networkCache = new NetworkCache(page);
+
     page.goto('https://example.com');
 
-    let request = await page.networkCache.waitRequest(/https:\/\/example.com/);
-    let response = await page.networkCache.waitResponse(/https:\/\/example.com/);
+    let request = await networkCache.waitRequest(/https:\/\/example.com/);
+    let response = await networkCache.waitResponse(/https:\/\/example.com/);
 });
 ```
